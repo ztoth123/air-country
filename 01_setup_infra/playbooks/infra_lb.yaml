@@ -1,0 +1,173 @@
+- hosts: lbs
+  remote_user: vagrant
+  become: yes
+
+  tasks:
+    - name: disable eth0 link permanently
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth0
+        regexp: '^ONBOOT'
+        line: ONBOOT="no"
+
+    - name: add default route permanently
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth1
+        insertafter: EOF
+        line: 'GATEWAY=172.16.79.2'
+
+    - name: add DNS server address permanently
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth1
+        insertafter: EOF
+        line: 'DNS1=8.8.8.8'
+
+    - name: disable swap
+      shell: "/sbin/swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab"
+
+    - name: stop firewalld
+      command: systemctl stop firewalld
+
+    - name: disable firewalld
+      command: systemctl disable firewalld
+
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+        update_cache: yes
+
+    - name: install iptables-services
+      yum:
+        name: iptables-services
+        state: present
+
+    - name: load br_netfilter kernel nmodule
+      command: modprobe br_netfilter
+    
+    - name: load br_netfilter kernel nmodule permanently
+      lineinfile:
+        path: /etc/modules-load.d/br_netfilter.conf
+        line: 'br_netfilter'
+        create: yes
+
+    - name: set kernel parameter 01
+      command: sysctl net.ipv4.ip_forward=1
+
+    - name: set kernel parameter 02
+      command: sysctl net.bridge.bridge-nf-call-iptables=1
+
+    - name: set kernel parameter 01 permanently
+      shell: "echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.d/k8s.conf"
+
+    - name: set kernel parameter 02 permanently
+      shell: "echo net.bridge.bridge-nf-call-iptables=1 >> /etc/sysctl.d/k8s.conf"
+
+    - name: start iptables.service
+      command: systemctl start iptables
+
+    - name: enable iptables.service
+      command: systemctl enable iptables
+
+    - name: Remove /etc/sysconfig/iptables file
+      file:
+        path: /etc/sysconfig/iptables
+        state: absent
+
+    - name: Add iptables rules on workers
+      lineinfile:
+        path: /etc/sysconfig/iptables
+        create: yes
+        line: "{{ item }}"
+        state: present
+      with_items:
+          - '# you can edit this manually or use system-config-firewall'
+          - '# please do not ask us to add additional ports/services to this default configuration'
+          - '*filter'
+          - ':INPUT ACCEPT [0:0]'
+          - ':FORWARD ACCEPT [0:0]'
+          - ':OUTPUT ACCEPT [0:0]'
+          - '-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT'
+          - '-A INPUT -p icmp -j ACCEPT'
+          - '-A INPUT -i lo -j ACCEPT'
+          - '-A INPUT -p tcp -s 172.16.79.0/24 -m state --state NEW -m tcp --dport 22 -j ACCEPT'
+          - '-A INPUT -p tcp -s 172.16.79.0/24 -m state --state NEW -m tcp --dport 80 -j ACCEPT'
+          - '-A INPUT -p tcp -s 172.16.79.0/24 -m state --state NEW -m tcp --dport 443 -j ACCEPT'
+          - '-A INPUT -j REJECT --reject-with icmp-host-prohibited'
+          - 'COMMIT'
+
+    - name: add epel-release repo
+      yum:
+        name: epel-release
+        state: present
+
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+        update_cache: yes
+
+    - name: add hosts to /etc/hosts
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          172.16.79.11 k8s.lunatest.nl
+          172.16.79.11 master-1
+          172.16.79.21 worker-1
+          172.16.79.22 worker-2
+          172.16.79.31 lb-1
+
+    - name: reboot the machine
+      reboot:
+
+    - name: install NGINX
+      yum:
+        name: nginx
+        state: present
+
+    - name: Remove /etc/nginx/nginx.conf file
+      file:
+        path: /etc/nginx/nginx.conf
+        state: absent
+
+    - name: insert NGINX configuration
+      blockinfile:
+        path: /etc/nginx/nginx.conf
+        create: yes
+        block: |
+          user nginx;
+          worker_processes auto;
+          error_log /var/log/nginx/error.log;
+          pid /run/nginx.pid;
+          include /usr/share/nginx/modules/*.conf;
+          events {
+              worker_connections 1024;
+          }
+          http {
+              log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                                '$status $body_bytes_sent "$http_referer" '
+                                '"$http_user_agent" "$http_x_forwarded_for"';
+              access_log  /var/log/nginx/access.log  main;
+              sendfile            on;
+              tcp_nopush          on;
+              tcp_nodelay         on;
+              keepalive_timeout   65;
+              types_hash_max_size 2048;
+              include             /etc/nginx/mime.types;
+              default_type        application/octet-stream;
+              include /etc/nginx/conf.d/*.conf;
+          }
+          stream {
+              upstream app_80 {
+                  server 172.16.79.21:80 max_fails=3 fail_timeout=5s;
+                  server 172.16.79.22:80 max_fails=3 fail_timeout=5s;
+              }
+              server {
+                  listen 172.16.79.31:80 bind;
+                  proxy_pass app_80;
+              }
+          }
+
+    - name: start NGINX
+      service:
+        name: nginx
+        state: started

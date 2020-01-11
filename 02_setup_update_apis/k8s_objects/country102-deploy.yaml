@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: country102
+  name: country102
+  namespace: country
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: country102
+  template:
+    metadata:
+      labels:
+        run: country102
+    spec:
+      containers:
+      - image: ztoth123/aircountries:country102
+        name: country102
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      imagePullSecrets:
+      - name: regcred

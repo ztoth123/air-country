@@ -1,0 +1,1 @@
+kubeadm join k8s.lunatest.nl:6443 --token p71qvu.1k9s86o90hrl26j0     --discovery-token-ca-cert-hash sha256:64c93dce9c08a3864d74999fa893ff84d32c69485fd9317a4fe379d3ddc23517 

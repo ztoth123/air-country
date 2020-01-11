@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: country102
+  name: country102-service
+  namespace: country
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    run: country102
+  sessionAffinity: None
+  type: ClusterIP

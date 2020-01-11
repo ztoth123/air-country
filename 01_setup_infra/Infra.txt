@@ -1,0 +1,33 @@
+1. Install vagrant on the host
+
+2. install ansible on the host
+----------------------------------------------
+sudo apt update
+sudo apt install software-properties-common
+sudo apt-add-repository --yes --update ppa:ansible/ansible
+sudo apt install ansible
+
+3. Define Vagrantfile for basic VM install
+------------------------------------------
+VM name
+VM CPUs
+VM RAM
+VM network : private_network
+VM ssh guest, ssh host ports
+VM DNS configuration
+Ansible Provisioner
+
+4. Define ansible-playbook
+--------------------------
+hosts
+private_key_file
+
+VM eth0 down
+VM /etc/hosts
+install NGINX on lb01
+install docker on master-01, worker-01, worker-02
+install kubeadm, kubelet, kubectl on master-01, worker-01, worker-02
+install kubernetes cluster01 with kubeadm
+install CNI to cluster01
+Install NGINX ingress-controller on cluster01
+configure NGINX on lb01 as TCP loadbalancer for worker-01:80, worker-02:80

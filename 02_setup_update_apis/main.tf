@@ -2,7 +2,7 @@ provider "kubernetes" {}
 
 resource "kubernetes_namespace" "country" {
   metadata {
-    name = "country"
+    name = var.namespace1
 
     labels = {
       label = "country"
@@ -15,7 +15,7 @@ resource "kubernetes_namespace" "country" {
 
 resource "kubernetes_namespace" "air" {
   metadata {
-    name = "air"
+    name = var.namespace2
 
     labels = {
       label = "air"

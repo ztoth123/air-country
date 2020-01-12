@@ -1,0 +1,6 @@
+01_setup_infra/.vagrant/
+01_setup_infra/playbooks/join-command
+02_setup_update_apis/.terraform/
+java_apis/docker_images/airports-assembly-1.0.3/*.jar
+java_apis/docker_images/airports-assembly-1.1.2/*.jar
+java_apis/docker_images/countries-assembly-1.0.2/*.jar

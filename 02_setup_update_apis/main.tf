@@ -362,3 +362,32 @@ resource "kubernetes_ingress" "countries_ingress" {
     }
   }
 }
+resource "kubernetes_pod" "testpod-in-air" {
+  metadata {
+    name = "airtestpod"
+    namespace = "air"
+  }
+
+  spec {
+    container {
+      image = "alpine"
+      name  = "airtestcontainer"
+      command = ["sleep", "120000"]
+    }
+  }
+}
+
+resource "kubernetes_pod" "testpod-in-country" {
+  metadata {
+    name = "countrytestpod"
+    namespace = "country"
+  }
+
+  spec {
+    container {
+      image = "alpine"
+      name  = "countrytestcontainer"
+      command = ["sleep", "120000"]
+    }
+  }
+}

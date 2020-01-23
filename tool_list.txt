@@ -1,0 +1,6 @@
+Host: vagrant, ansible, terraform, jenkins, kubectl,docker, git
+man01: git
+wrk01:
+wrk02:
+lb01:
+

@@ -1,1 +1,1 @@
-kubeadm join k8s.lunatest.nl:6443 --token rztjwa.qffjucioknhbekif     --discovery-token-ca-cert-hash sha256:126208c628df16e62002ef199b91a8af50a754f4e26471e1dd0de91fc968547b 
+kubeadm join k8s.lunatest.nl:6443 --token k27t3k.4xkg0quyhlxkuu07     --discovery-token-ca-cert-hash sha256:dffe2518d17df9df2cd150d6d6c2e195b58ad878db3fb1e63171da5438ee0c19 
